@@ -18,16 +18,6 @@ app.get('/', function(req, res){
 	res.send("hello world from the HTTP server");
 });
 
-// serving file - can serve any file
-app.get('/:fileName', function(req, res){
-	// server-side code
-	var fileName = req.params.fileName;
-	console.log(fileName + ' requested');
-	// __dirname gives the path to the studentServer.js file
-	res.sendFile(__dirname + '/' + fileName);
-});
-
-
 // add functionality to log requests
 app.use(function(req, res, next){
 	var filename = path.basename(req.url);
@@ -35,3 +25,7 @@ app.use(function(req, res, next){
 	console.log("The file " + filename + " was requested.");
 	next();
 });
+
+// serve statis files - e.g. html, css
+// should be the last line in the server
+app.use(express.static(__dirname));
