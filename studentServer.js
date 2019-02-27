@@ -11,7 +11,18 @@ var http = require('http');
 var httpServer = http.createServer(app); // create server with the app
 httpServer.listen(4480);
 
+// serving text
 app.get('/', function(req, res){
 	// server-side code
+	console.log("The server has received a request.");
 	res.send("hello world from the HTTP server");
+});
+
+
+// add functionality to log requests
+app.use(function(req, res, next){
+	var filename = path.basename(req.url);
+	var extension = path.extname(filename);
+	console.log("The file " + filename + " was requested.");
+	next();
 });
