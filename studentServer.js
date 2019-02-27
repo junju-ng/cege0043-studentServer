@@ -18,6 +18,14 @@ app.get('/', function(req, res){
 	res.send("hello world from the HTTP server");
 });
 
+// serving content
+app.get('/test.html', function(req, res){
+	// server-side code
+	console.log('test.html requested');
+	// __dirname gives the path to the studentServer.js file
+	res.sendFile(__dirname + '/test.html');
+});
+
 
 // add functionality to log requests
 app.use(function(req, res, next){
