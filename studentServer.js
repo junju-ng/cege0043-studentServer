@@ -18,12 +18,13 @@ app.get('/', function(req, res){
 	res.send("hello world from the HTTP server");
 });
 
-// serving content
-app.get('/test.html', function(req, res){
+// serving file - can serve any file
+app.get('/:fileName', function(req, res){
 	// server-side code
-	console.log('test.html requested');
+	var fileName = req.params.fileName;
+	console.log(fileName + ' requested');
 	// __dirname gives the path to the studentServer.js file
-	res.sendFile(__dirname + '/test.html');
+	res.sendFile(__dirname + '/' + fileName);
 });
 
 
