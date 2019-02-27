@@ -11,6 +11,51 @@ var http = require('http');
 var httpServer = http.createServer(app); // create server with the app
 httpServer.listen(4480);
 
+var bodyParser = require('body-parser'); // add bodyparser to process uploaded data
+app.use(bodyParser.urlencoded({
+	extended: true
+}));
+app.use(bodyParser.json());
+
+// import required database connectivity and set up database connection
+var fs = require('fs');
+var pg = require('pg');
+
+var configtext = ""+fs.readFileSync("/home/studentuser/certs/postGISConnection.js");
+
+// convert configuration file into name/value pair array
+var configarray = configtext.split(","); // comma as delimiter
+var config = {};
+for (var i = 0; i < configarray.length; i++){
+	var split = configarray[i].split(":"); // separate using :
+	config[split[0].trim()] = split[1].trim();
+}
+
+var pool = new pg.Pool(config);
+
+// app.get to test database connection
+app.get('/postgistest', function(req, res){
+	pool.connect(function(err, client, done){
+		if (err) {
+			// log, and send error to client if there is an error getting a connection
+			console.log("not able to get connection " + err);
+			res.status(400).send(err);
+		}
+		// send a query
+		client.query('SELECT name FROM london_poi', function(err, result){
+			done();
+			if (err){
+				// if query is not successful, send error to client
+				console.log(err);
+				res.status(400).send(err);
+			}
+			// if query is successful, send results to client
+			res.status(200).send(result.rows);
+		});
+	});
+});
+
+
 // serving text
 app.get('/', function(req, res){
 	// server-side code
