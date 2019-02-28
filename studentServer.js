@@ -97,9 +97,9 @@ app.post('/uploadData', function(req, res){
 		var querystring = "INSERT into formdata (name, surname, module, port_id, language, modulelist, lecturetime, geom) values ($1, $2, $3, $4, $5, $6, $7, ";
 		querystring = querystring + geometrystring + ")";
 		console.log(querystring);
-		// query string
+		// client sends query
 		client.query(querystring, [name, surname, module, portnum, language, modulelist, lecturetime], function(err, result){
-			done();
+			done(); // release client back into the pool
 			// if unable to query client, raise error
 			if (err){
 				console.log(err)
@@ -109,7 +109,39 @@ app.post('/uploadData', function(req, res){
 		});
 	});
 });
+
+
+// get formData as geojson
+app.get('/getFormData/:port_id',function(req, res){
+	pool.connect(function(err, client, done){
+		//raise error if unable to connect
+		if (err){
+			console.log("not able to get connection " + err);
+			res.status(400).send(err);
+		}
 		
+		// use in-built geoJSON functionality and create required geoJSON format
+		// query adapted from http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html , accessed 4th January 2018
+		 var querystring = " SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
+             querystring = querystring + "(SELECT 'Feature' As type,ST_AsGeoJSON(lg.geom)::json As geometry, ";
+             querystring = querystring + "row_to_json((SELECT l FROM (SELECT name,surname, port_id) As l ";
+             querystring = querystring + "    )) As properties";
+             querystring = querystring + "   FROM formdata  As lg where lg.port_id = '"+req.params.port_id + "' limit 100  ) As f ";
+		console.log(querystring);
+		// client sends query
+		client.query(querystring, function(err, result){
+			done(); // release client back to the pool
+			// raise error if there is one
+			if (err){
+				console.log(err);
+				res.status(400).send(err);
+			}
+			res.status(200).send(result.rows);
+		});
+	});
+});
+		
+
 
 
 // serving text
