@@ -55,6 +55,16 @@ app.get('/postgistest', function(req, res){
 	});
 });
 
+// do POST request upload data to studentServer.js
+app.post('/reflectData', function(req, res){
+	// Using POST hence uploading data
+	// parameters form part of BODY request c.f. RESTful API
+	console.dir(req.body);
+	
+	// Echo request back to client
+	res.send(req.body);
+});
+
 
 // serving text
 app.get('/', function(req, res){
@@ -76,6 +86,7 @@ app.use(function(req, res, next){
 	res.header("Access-Control-Allow-Headers","X-Requested-With");
 	next();
 });
+
 
 // serve static files - e.g. html, css
 // should be the last line in the server
