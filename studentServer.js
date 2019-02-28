@@ -88,17 +88,24 @@ app.post('/uploadData', function(req, res){
 		var surname = req.body.surname;
 		var module = req.body.module;
 		var portnum = req.body.port_id;
-		var querystring = "INSERT into formdata (name, surname, module, port_id) values ($1, $2, $3, $4) ";
+		var language = req.body.language;
+		var modulelist = req.body.modulelist;
+		var lecturetime = req.body.lecturetime;
+		
+		var geometrystring = "st_geomfromtext('POINT("+req.body.longitude + " "+req.body.latitude + ")')";
+		
+		var querystring = "INSERT into formdata (name, surname, module, port_id, language, modulelist, lecturetime, geom) values ($1, $2, $3, $4, $5, $6, $7, ";
+		querystring = querystring + geometrystring + ")";
 		console.log(querystring);
 		// query string
-		client.query(querystring, [name, surname, module, portnum], function(err, result){
+		client.query(querystring, [name, surname, module, portnum, language, modulelist, lecturetime], function(err, result){
 			done();
 			// if unable to query client, raise error
 			if (err){
 				console.log(err)
 				res.status(400).send(err);
 			}
-			res.status(200).send("row inserted"); // insert record in formdata
+			res.status(200).send("row inserted"); // sucessfully inserted record in formdata
 		});
 	});
 });
