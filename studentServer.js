@@ -11,6 +11,107 @@ var http = require('http');
 var httpServer = http.createServer(app); // create server with the app
 httpServer.listen(4480);
 
+var bodyParser = require('body-parser'); // add bodyparser to process uploaded data
+app.use(bodyParser.urlencoded({
+	extended: true
+}));
+app.use(bodyParser.json());
+
+app.use(function(req, res, next){
+	res.header("Access-Control-Allow-Origin","*");
+	res.header("Access-Control-Allow-Headers","X-Requested-With");
+	next();
+});
+
+// import required database connectivity and set up database connection
+var fs = require('fs');
+var pg = require('pg');
+
+var configtext = ""+fs.readFileSync("/home/studentuser/certs/postGISConnection.js");
+
+// convert configuration file into name/value pair array
+var configarray = configtext.split(","); // comma as delimiter
+var config = {};
+for (var i = 0; i < configarray.length; i++){
+	var split = configarray[i].split(":"); // separate using :
+	config[split[0].trim()] = split[1].trim();
+}
+
+var pool = new pg.Pool(config);
+
+// app.get to test database connection
+app.get('/postgistest', function(req, res){
+	pool.connect(function(err, client, done){
+		if (err) {
+			// log, and send error to client if there is an error getting a connection
+			console.log("not able to get connection " + err);
+			res.status(400).send(err);
+		}
+		// send a query
+		client.query('SELECT name FROM london_poi', function(err, result){
+			done();
+			if (err){
+				// if query is not successful, send error to client
+				console.log(err);
+				res.status(400).send(err);
+			}
+			// if query is successful, send results to client
+			res.status(200).send(result.rows);
+		});
+	});
+});
+
+// do POST request upload data to studentServer.js
+app.post('/reflectData', function(req, res){
+	// Using POST hence uploading data
+	// parameters form part of BODY request c.f. RESTful API
+	console.dir(req.body);
+	
+	// Echo request back to client
+	res.send(req.body);
+});
+
+// add POST command that connects to the database and inserts a record into the formData table
+app.post('/uploadData', function(req, res){
+	// Using POST hence uploading data
+	// parameters form part of BODY request c.f. RESTful API
+	console.dir(req.body);
+	
+	pool.connect(function(err, client, done){
+		// send error to client if unable to get connection
+		if (err) {
+			console.log("not able to get connection " + err);
+			res.status(400).send(err);
+		}
+		// create variables for inserting record
+		var name = req.body.name;
+		var surname = req.body.surname;
+		var module = req.body.module;
+		var portnum = req.body.port_id;
+		var language = req.body.language;
+		var modulelist = req.body.modulelist;
+		var lecturetime = req.body.lecturetime;
+		
+		var geometrystring = "st_geomfromtext('POINT("+req.body.longitude + " "+req.body.latitude + ")')";
+		
+		var querystring = "INSERT into formdata (name, surname, module, port_id, language, modulelist, lecturetime, geom) values ($1, $2, $3, $4, $5, $6, $7, ";
+		querystring = querystring + geometrystring + ")";
+		console.log(querystring);
+		// query string
+		client.query(querystring, [name, surname, module, portnum, language, modulelist, lecturetime], function(err, result){
+			done();
+			// if unable to query client, raise error
+			if (err){
+				console.log(err)
+				res.status(400).send(err);
+			}
+			res.status(200).send("row inserted"); // sucessfully inserted record in formdata
+		});
+	});
+});
+		
+
+
 // serving text
 app.get('/', function(req, res){
 	// server-side code
@@ -26,11 +127,8 @@ app.use(function(req, res, next){
 	next();
 });
 
-app.use(function(req, res, next){
-	res.header("Access-Control-Allow-Origin","*");
-	res.header("Access-Control-Allow-Headers","X-Requested-With");
-	next();
-});
+
+
 
 // serve static files - e.g. html, css
 // should be the last line in the server
