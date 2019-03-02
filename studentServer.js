@@ -72,42 +72,36 @@ app.post('/reflectData', function(req, res){
 });
 
 // add POST command that connects to the database and inserts a record into the formData table
-app.post('/uploadData', function(req, res){
-	// Using POST hence uploading data
-	// parameters form part of BODY request c.f. RESTful API
-	console.dir(req.body);
-	
-	pool.connect(function(err, client, done){
-		// send error to client if unable to get connection
-		if (err) {
-			console.log("not able to get connection " + err);
-			res.status(400).send(err);
-		}
-		// create variables for inserting record
-		var name = req.body.name;
-		var surname = req.body.surname;
-		var module = req.body.module;
-		var portnum = req.body.port_id;
-		var language = req.body.language;
-		var modulelist = req.body.modulelist;
-		var lecturetime = req.body.lecturetime;
-		
-		var geometrystring = "st_geomfromtext('POINT("+req.body.longitude + " "+req.body.latitude + ")')";
-		
-		var querystring = "INSERT into formdata (name, surname, module, port_id, language, modulelist, lecturetime, geom) values ($1, $2, $3, $4, $5, $6, $7, ";
-		querystring = querystring + geometrystring + ")";
-		console.log(querystring);
-		// client sends query
-		client.query(querystring, [name, surname, module, portnum, language, modulelist, lecturetime], function(err, result){
-			done(); // release client back into the pool
-			// if unable to query client, raise error
-			if (err){
-				console.log(err)
-				res.status(400).send(err);
-			}
-			res.status(200).send("row inserted"); // sucessfully inserted record in formdata
-		});
-	});
+app.post('/uploadData', function (req, res) {
+    // note that we are using POST here as we are uploading data
+    // so the parameters form part of the BODY of the request rather than the RESTful API
+    console.dir(req.body);
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("not able to get connection " + err);
+            res.status(400).send(err);
+        }
+        var name = req.body.name;
+        var surname = req.body.surname;
+        var module = req.body.module;
+        var portnum = req.body.port_id;
+        var language = req.body.language;
+        var modulelist = req.body.modulelist;
+        var lecturetime = req.body.lecturetime;
+        var geometrystring = "st_geomfromtext('POINT(" + req.body.longitude + " " + req.body.latitude + ")')";
+
+        var querystring = "INSERT into formdata (name,surname,module, port_id,language, modulelist, lecturetime, geom) values ($1,$2,$3,$4,$5,$6,$7,";
+        var querystring = querystring + geometrystring + ") ";
+        console.log(querystring);
+        client.query(querystring, [name, surname, module, portnum, language, modulelist, lecturetime], function (err, result) {
+            done();
+            if (err) {
+                console.log(err);
+                res.status(400).send(err);
+            }
+            res.status(200).send("row inserted");
+        });
+    });
 });
 
 
