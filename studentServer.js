@@ -61,7 +61,7 @@ app.get('/postgistest', function(req, res){
 	});
 });
 
-// do POST request upload data to studentServer.js
+// do POST request reflect uploaded data to studentServer.js
 app.post('/reflectData', function(req, res){
 	// Using POST hence uploading data
 	// parameters form part of BODY request c.f. RESTful API
@@ -72,6 +72,7 @@ app.post('/reflectData', function(req, res){
 });
 
 // add POST command that connects to the database and inserts a record into the formData table
+
 app.post('/uploadData', function (req, res) {
     // note that we are using POST here as we are uploading data
     // so the parameters form part of the BODY of the request rather than the RESTful API
@@ -100,41 +101,40 @@ app.post('/uploadData', function (req, res) {
                 res.status(400).send(err);
             }
             res.status(200).send("row inserted");
+
         });
     });
 });
 
 
 // get formData as geojson
-app.get('/getFormData/:port_id',function(req, res){
-	pool.connect(function(err, client, done){
-		//raise error if unable to connect
-		if (err){
-			console.log("not able to get connection " + err);
-			res.status(400).send(err);
-		}
-		
-		// use in-built geoJSON functionality and create required geoJSON format
-		// query adapted from http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html , accessed 4th January 2018
-		 var querystring = " SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
-             querystring = querystring + "(SELECT 'Feature' As type,ST_AsGeoJSON(lg.geom)::json As geometry, ";
-             querystring = querystring + "row_to_json((SELECT l FROM (SELECT name,surname, port_id) As l ";
-             querystring = querystring + "    )) As properties";
-             querystring = querystring + "   FROM formdata  As lg where lg.port_id = '"+req.params.port_id + "' limit 100  ) As f ";
-		console.log(querystring);
-		// client sends query
-		client.query(querystring, function(err, result){
-			done(); // release client back to the pool
-			// raise error if there is one
-			if (err){
-				console.log(err);
-				res.status(400).send(err);
-			}
-			res.status(200).send(result.rows);
-		});
-	});
+app.get('/getFormData/:port_id', function (req, res) {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("not able to get connection " + err);
+            res.status(400).send(err);
+        }
+        // use the inbuilt geoJSON functionality
+        // and create the required geoJSON format using a query adapted from here: http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html, accessed 4th January 2018
+        // note that query needs to be a single string with no line breaks so built it up bit by bit
+        var querystring = " SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
+        querystring = querystring + "(SELECT 'Feature' As type,ST_AsGeoJSON(lg.geom)::json As geometry, ";
+        querystring = querystring + "row_to_json((SELECT l FROM (SELECT name,surname, port_id) As l ";
+        querystring = querystring + "    )) As properties";
+        querystring = querystring + "   FROM formdata  As lg where lg.port_id = '" + req.params.port_id + "' limit 100  ) As f ";
+        console.log(querystring);
+        client.query(querystring, function (err, result) {
+            //call `done()` to release the client back to the pool
+            done();
+            if (err) {
+                console.log(err);
+                res.status(400).send(err);
+            }
+            res.status(200).send(result.rows);
+        });
+    });
 });
-		
+	
 
 
 
